@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <script type="text/javascript">
+
+        var httpRequest;
+
+        var dataTitle = [
+            {name : "row_num" , type : "NUMBER", key:"SEQ", value:0},
+            {name : "title", type : "CHAR", key:null},
+            {name : "desc", type : "CHAR", key:null},
+            {name : "progress", type : "CHAR", key:null},
+            {name : "start_date", type :"DATE", key:null},
+            {name : "end_date", type : "DATE", key:null}
+        ];
+
+        function init() {
+            console.log("init");
+            ajaxForReq("/read",null,callback_getList);
+        }
+
+        function callback_getList(){
+            if (httpRequest.readyState === XMLHttpRequest.DONE){
+                console.log("success");
+                var data = JSON.parse(httpRequest.responseText);
+console.log(data);
+                if(data){
+                    var boardList = data.boardList;
+                    var workList = document.getElementById("workList");
+                    for(var i in boardList){
+                        workList.append(bindElement(boardList[i])) ;
+
+                        if(dataTitle[0].value < boardList[i][dataTitle[0].name]){
+                            dataTitle[0].value = boardList[i][dataTitle[0].name];
+                        }
+
+                    }
+                    dataTitle[0].value++;
+                }
+            }
+            else if(httpRequest.readyState === XMLHttpRequest.HEADERS_RECEIVED)console.log("HEADERS_RECEIVED");
+            else if(httpRequest.readyState === XMLHttpRequest.LOADING)console.log("LOADING");
+            else if(httpRequest.readyState === XMLHttpRequest.OPENED)console.log("OPENED");
+            else if(httpRequest.readyState === XMLHttpRequest.UNSENT)console.log("UNSENT");
+            else console.log("error");
+
+
+        }
+
+        function ajaxForReq(uri,param,callbackFunction){
+            httpRequest = new XMLHttpRequest();
+            httpRequest.onload = callbackFunction;
+
+            httpRequest.open('POST', uri, true);
+            httpRequest.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+
+            if(param) httpRequest.send(param);
+            else httpRequest.send(null);
+
+        }
+
+        function callback_removeWork(){
+            if (httpRequest.readyState === XMLHttpRequest.DONE)  console.log("DONE");
+            else if(httpRequest.readyState === XMLHttpRequest.HEADERS_RECEIVED)console.log("HEADERS_RECEIVED");
+            else if(httpRequest.readyState === XMLHttpRequest.LOADING)console.log("LOADING");
+            else if(httpRequest.readyState === XMLHttpRequest.OPENED)console.log("OPENED");
+            else if(httpRequest.readyState === XMLHttpRequest.UNSENT)console.log("UNSENT");
+            else console.log("error");
+
+        }
+
+        function removeWork(event) {
+            event.preventDefault();
+            var targetElement = event.target.parentElement.parentElement;
+
+            var rowNum = targetElement.firstElementChild.innerHTML;
+            var param = dataTitle[0].name+"="+rowNum;
+            ajaxForReq("/delete",param,callback_removeWork);
+            targetElement.remove();
+        }
+
+        function callback_saveWork(){
+            if (httpRequest.readyState === XMLHttpRequest.DONE)  console.log("DONE");
+            else if(httpRequest.readyState === XMLHttpRequest.HEADERS_RECEIVED)console.log("HEADERS_RECEIVED");
+            else if(httpRequest.readyState === XMLHttpRequest.LOADING)console.log("LOADING");
+            else if(httpRequest.readyState === XMLHttpRequest.OPENED)console.log("OPENED");
+            else if(httpRequest.readyState === XMLHttpRequest.UNSENT)console.log("UNSENT")
+            else console.log("error");
+
+        }
+
+        function saveWork(event) {
+            event.preventDefault();
+
+            var targetElement = event.target.parentElement.parentElement;
+
+            var inputElement = targetElement.querySelectorAll("input");
+            var inputData = new Object();
+
+            var params = "";
+            for (var i = 0; i < inputElement.length; i++){
+                inputData[dataTitle[i].name] = inputElement[i].value;
+
+                if(i != 0) params += "&";
+                params += dataTitle[i].name+"="+inputData[dataTitle[i].name];
+            }
+
+
+            //while (targetElement.firstChild) targetElement.removeChild(targetElement.firstChild);
+
+            ajaxForReq("/create",params,callback_saveWork);
+            //bindElement(targetElement, inputData);
+            targetElement.parentElement.insertBefore(bindElement(inputData),targetElement);
+            targetElement.remove();
+        }
+
+        function bindElement(data) {
+            var li = document.createElement("li");
+            //var li = targetElement;
+
+            for (var i = 0; i <= dataTitle.length - 1; i++) {
+                var span = document.createElement("span");
+                span.setAttribute("class", dataTitle[i].name);
+                span.innerText = data[dataTitle[i].name];
+                li.append(span);
+            }
+
+            span = document.createElement("span");
+            var checkbox = document.createElement("input");
+            checkbox.setAttribute("type", "checkbox");
+            span.append(checkbox);
+            li.append(span);
+
+            span = document.createElement("span");
+            var button = document.createElement("button");
+            button.addEventListener("click", updateWork);
+            button.innerHTML = "Modify";
+            span.append(button);
+            li.append(span);
+
+            span = document.createElement("span");
+            var button = document.createElement("button");
+            button.addEventListener("click", removeWork);
+            button.innerHTML = "Remove";
+            span.append(button);
+            li.append(span);
+
+            return li;
+        }
+
+        function addWork() {
+            var ulElement = document.getElementById("workList");
+
+            var li = document.createElement("li");
+
+            for (var i = 0; i <= dataTitle.length - 1; i++) {
+                var span = document.createElement("span");
+                span.setAttribute("class", dataTitle[i].name);
+
+                var input = document.createElement("input");
+
+                input.setAttribute("name", dataTitle[i].name);
+
+                if (dataTitle[i].type == "NUMBER") {
+                    input.setAttribute("type", "number");
+                } else if (dataTitle[i].type == "DATE") {
+                    input.setAttribute("type", "date");
+                    input.setAttribute("value", ""+new Date().getDate());
+                } else {
+                    input.setAttribute("type", "text");
+                }
+
+                if (dataTitle[i].key == "SEQ") {
+                    input.setAttribute("value",""+dataTitle[i].value++);
+                    input.readOnly = true;
+                }
+
+                span.append(input);
+                li.append(span);
+            }
+
+            span = document.createElement("span");
+            var button = document.createElement("button");
+            button.addEventListener("click", saveWork);
+            button.innerHTML = "Save";
+            span.append(button);
+            li.append(span);
+
+/*            span = document.createElement("span");
+            var button = document.createElement("button");
+            button.addEventListener("click", removeWork);
+            button.innerHTML = "Remove";
+            span.append(button);
+            li.append(span);*/
+
+            ulElement.append(li);
+        }
+
+        function updateWork(event){
+            event.preventDefault();
+            var targetElement = event.target.parentElement.parentElement;
+
+            var li = document.createElement("li");
+
+            for (var i = 0; i <= dataTitle.length - 1; i++) {
+                var span = document.createElement("span");
+                span.setAttribute("class", dataTitle[i].name);
+
+                var input = document.createElement("input");
+                input.setAttribute("name", dataTitle[i].name);
+                input.setAttribute("value",targetElement.getElementsByClassName(dataTitle[i].name)[0].innerText);
+
+                if (dataTitle[i].type == "NUMBER") {
+                    input.setAttribute("type", "number");
+                } else if (dataTitle[i].type == "DATE") {
+                    input.setAttribute("type", "date");
+                    input.setAttribute("value", ""+new Date().getDate());
+                } else {
+                    input.setAttribute("type", "text");
+                }
+
+                span.append(input);
+                li.append(span);
+            }
+
+            span = document.createElement("span");
+            var button = document.createElement("button");
+            button.addEventListener("click", saveWork);
+            button.innerHTML = "Save";
+            span.append(button);
+            li.append(span);
+
+            targetElement.parentElement.insertBefore(li,targetElement);
+            targetElement.remove();
+
+        }
+    </script>
+
+    <style>
+        span {
+            margin: 10px 10px 10px 10px;
+        }
+    </style>
+</head>
+
+<body onload="init();">
+<h3>Schedule Board</h3>
+
+<button onclick="addWork();">Add work</button>
+
+<ul id="workList"></ul>
+</body>
+</html>
